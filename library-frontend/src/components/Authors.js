@@ -1,7 +1,11 @@
 import React from 'react'
 
-const Authors = ({ result }) => {
-  const authors = result.data.allAuthors || []
+const Authors = (props) => {
+  const authors = props.result.data.allAuthors || []
+
+  if (!props.show) {
+    return null
+  }
   
   return (
     <div>

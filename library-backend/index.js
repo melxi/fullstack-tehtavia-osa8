@@ -135,8 +135,10 @@ const resolvers = {
         return books.filter(byAuthor)
       } else if (!args.author && args.genre) {
         return books.filter(byGenre)
-      } else {
+      } else if (args.author && args.genre) {
         return books.filter(byAuthor).filter(byGenre)
+      } else {
+        return books
       }
     },
     allAuthors: () => authors
