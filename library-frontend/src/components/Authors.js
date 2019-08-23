@@ -39,7 +39,7 @@ const Authors = (props) => {
       variables: { name, setBornTo: birthYear }
     })
     
-    setName(authors[0].name)
+    setName('')
     setBirthYear('')
   }
   
@@ -70,6 +70,7 @@ const Authors = (props) => {
       <form onSubmit={submit}>
         <div>
           <select value={name} onChange={({target}) => setName(target.value)}>
+            <option>Choose</option>
             {authors.map(author => {
               return (
                 <option key={author.name} value={author.name}>{author.name}</option>
