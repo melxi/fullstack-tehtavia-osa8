@@ -49,30 +49,34 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    bookCount: () => books.length,
-    authorCount: () => authors.length,
-    allBooks: (root, args) => {
-      return Book.find({})
-      const byAuthor = book => book.author === args.author
-      const byGenre = book => {
-        for (let i = 0; i <= book.genres.length; i++) {
-          if (book.genres[i] === args.genre) {
-            return book
-          }
-        }
-      }
+    bookCount: async () => {
+      const books = await Book.find({})
+      return books.length
+    },
+    authorCount: async () => {
+      const authors = await Author.find({})
+      return authors.length
+    },
+    allBooks: async (root, args) => {
+      const books = await Book.find({}).populate('author')
+      const byAuthor = book => book.author.name === args.author
       
       if (args.author && !args.genre) {
         return books.filter(byAuthor)
       } else if (!args.author && args.genre) {
-        return books.filter(byGenre)
+        const books = await Book.find({ genres: { $in: [args.genre]}})        
+        return books
       } else if (args.author && args.genre) {
-        return books.filter(byAuthor).filter(byGenre)
+        const books = await Book.find({ genres: { $in: [args.genre]}}).populate('author')
+        return books.filter(byAuthor)
       } else {
         return books
       }
     },
-    allAuthors: () => Author.find({})
+    allAuthors: async () => {
+      const authors = await Author.find({})
+      return authors
+    }
   },
   Book: {
     author: async (root) => {
