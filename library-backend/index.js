@@ -26,8 +26,9 @@ const typeDefs = gql`
     value: String!
   }
   type Author {
-    name: String
+    name: String!
     born: Int
+    bookCount: Int!
   }
   type Book {
     title: String!
@@ -97,6 +98,9 @@ const resolvers = {
     },
     me: async (root, args, context) => context.currentUser
   },
+  Author: {
+    bookCount: (root) => root.books.length
+  },
   Book: {
     author: async (root) => {
       const author = await Author.findById(root.author)      
@@ -128,6 +132,10 @@ const resolvers = {
       try {
         const book = await new Book ({...args, author: author._id })
         await book.save()
+        console.log(book)
+        author.books = author.books.concat(book._id)
+        author.save()
+        console.log(author)
         return await Book.findById(book._id).populate('author')
       } catch (error) {
         throw new UserInputError(error.message, {
