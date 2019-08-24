@@ -48,12 +48,12 @@ const typeDefs = gql`
       title: String!
       name: String!
       born: Int
-      published: Int!
+      published: String!
       genres: [String!]!
     ): Book
     editAuthor(
       name: String!
-      setBornTo: Int!
+      setBornTo: String!
     ) : Author
     createUser(
       username: String!
@@ -114,7 +114,7 @@ const resolvers = {
     addBook: async (root, args, context) => {
       let author = await Author.findOne({ name: args.name })
       const currentUser = context.currentUser
-
+      
       if (!currentUser) {
         throw new AuthenticationError('Not authenticated')
       }
@@ -132,10 +132,8 @@ const resolvers = {
       try {
         const book = await new Book ({...args, author: author._id })
         await book.save()
-        console.log(book)
         author.books = author.books.concat(book._id)
         author.save()
-        console.log(author)
         return await Book.findById(book._id).populate('author')
       } catch (error) {
         throw new UserInputError(error.message, {
@@ -197,7 +195,7 @@ const server = new ApolloServer({
         auth.substring(7), config.SECRET
       )
 
-      const currentUser = await User.findById(decodedToken.id)      
+      const currentUser = await User.findById(decodedToken.id)
       return { currentUser }
     }
   }
