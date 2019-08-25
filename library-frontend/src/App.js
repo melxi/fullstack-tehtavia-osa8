@@ -46,14 +46,6 @@ const ALL_GENRES = gql`
 }
 `
 
-const USER = gql`
-{
-  me {
-    favoriteGenre
-  }
-}
-`
-
 const ADD_BOOK = gql`
 mutation addBook($title: String!, $name: String!, $published: String!, $genres: [String!]!) {
   addBook(
@@ -77,6 +69,7 @@ const EDIT_AUTHOR = gql`
     editAuthor(name: $name, setBornTo: $setBornTo) {
       name
       born
+      bookCount
     } 
   }
 `
@@ -101,7 +94,6 @@ const App = () => {
     variables: { genre }
   })
   const genres = useQuery(ALL_GENRES)
-  const favoriteGenre = useQuery(USER)
   const [login] = useMutation(LOGIN, {
     onError: handleError
   })
@@ -111,14 +103,7 @@ const App = () => {
   })
   const [editAuthor] = useMutation(EDIT_AUTHOR, {
     onError: handleError,
-    update: (store, response) => {
-      const dataInStore = store.readQuery({ query: ALL_AUTHORS })
-      dataInStore.allAuthors.push(response.data.editAuthor)
-      store.writeQuery({
-        query: ALL_AUTHORS,
-        data: dataInStore
-      })
-    }
+    refetchQueries: [{ query: ALL_AUTHORS }]
   })
   
   const logout = () => {
@@ -156,7 +141,7 @@ const App = () => {
 
       <NewBook addBook={addBook} show={page === 'add'} />
 
-      <Recommended result={books} recommended={favoriteGenre} setGenre={genre => setGenre(genre)} show={page === 'recommended'}/>
+      <Recommended show={page === 'recommended'}/>
 
       <LoginForm login={login} setPage={setPage} setToken={token => setToken(token)} show={page === 'login'} />
 

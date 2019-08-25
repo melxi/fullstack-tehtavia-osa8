@@ -1,22 +1,60 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { gql } from 'apollo-boost'
+import { useApolloClient } from '@apollo/react-hooks'
+
+const FAVORITE_GENRE = gql`
+{
+  me {
+    favoriteGenre
+  }
+}
+`
+
+const RECOMMENDE_BOOKS = gql`
+query allBooks($genre: String) {
+  allBooks(genre: $genre) {
+    title
+    author {
+      name
+    }
+    published
+    genres
+  }
+}
+`
 
 const Recommended = (props) => {
-  const recommended = props.recommended.data.me || ''
-  const books = props.result.data.allBooks
-  props.setGenre(recommended.favoriteGenre)
+  const client = useApolloClient(FAVORITE_GENRE)
+  const [recommended, setRecommended] = useState('')
+  const [books, setBooks] = useState(null)
+
+  useEffect(() => {
+    const showRecommended = async () => {
+      const { data } = await client.query({
+        query: FAVORITE_GENRE
+      })
+      setRecommended(data.me.favoriteGenre)
+      const books = await client.query({
+        query: RECOMMENDE_BOOKS,
+        variables: { genre: data.me.favoriteGenre }
+      })
+      setBooks(books.data.allBooks)
+    }
+    showRecommended()
+  }, [])
   
   if (!props.show) {
     return null
   }
 
-  if (props.result.loading) {
+  if (!books) {
     return <div>loading...</div>
   }
 
   return (
     <div>
       <h2>recommendations</h2>
-      <div>books in your favorite genre <strong>{recommended.favoriteGenre}</strong></div>
+      <div>books in your favorite genre <strong>{recommended}</strong></div>
       <table>
         <tbody>
           <tr>
@@ -28,7 +66,7 @@ const Recommended = (props) => {
               published
             </th>
           </tr>
-          {books.map(a =>
+          {books.filter(book => book.genres.includes(recommended)).map(a =>
             <tr key={a.title}>
               <td>{a.title}</td>
               <td>{a.author.name}</td>
