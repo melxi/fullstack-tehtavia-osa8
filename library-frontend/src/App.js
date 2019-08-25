@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Authors from './components/Authors'
 import Books from './components/Books'
 import NewBook from './components/NewBook'
@@ -25,13 +25,22 @@ const ALL_AUTHORS = gql`
 `
 
 const ALL_BOOKS = gql`
-{
-  allBooks {
+query allBooks($genre: String) {
+  allBooks(genre: $genre) {
     title
     author {
       name
     }
     published
+    genres
+  }
+}
+`
+
+const ALL_GENRES = gql`
+{
+  allBooks {
+    genres
   }
 }
 `
@@ -76,14 +85,20 @@ const App = () => {
 
   const [token, setToken] = useState(null)
   const [page, setPage] = useState('authors')
+  const [genre, setGenre] = useState(null)
+  
   const authors = useQuery(ALL_AUTHORS)
-  const books = useQuery(ALL_BOOKS)
+  const books = useQuery(ALL_BOOKS, {
+    variables: { genre }
+  })
+  const genres = useQuery(ALL_GENRES)
+  
   const [login] = useMutation(LOGIN, {
     onError: handleError
   })
   const [addBook] = useMutation(ADD_BOOK, {
     onError: handleError,
-    refetchQueries: [{ query: ALL_AUTHORS }, { query: ALL_BOOKS}]
+    refetchQueries: [{ query: ALL_AUTHORS }, { query: ALL_BOOKS, variables: { genre } },{ query: ALL_GENRES }]
   })
   const [editAuthor] = useMutation(EDIT_AUTHOR, {
     onError: handleError,
@@ -109,6 +124,10 @@ const App = () => {
       {errorMessage}
     </div>
   
+  useEffect(() => {
+    setToken(window.localStorage.getItem('libraryUserLogin'))
+  }, [])
+
   return (
     <div>
       <div>
@@ -123,7 +142,7 @@ const App = () => {
       {errorNotification()}
       <Authors editAuthor={editAuthor} result={authors} show={page === 'authors'} />
 
-      <Books result={books} show={page === 'books'} />
+      <Books result={books} genres={genres} show={page === 'books'} setGenre={genre => setGenre(genre)}/>
 
       <NewBook addBook={addBook} show={page === 'add'} />
 
