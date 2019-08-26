@@ -2,10 +2,21 @@ import React, { useState, useEffect } from 'react'
 import Authors from './components/Authors'
 import Books from './components/Books'
 import NewBook from './components/NewBook'
-import { useQuery, useMutation, useApolloClient } from '@apollo/react-hooks'
+import { useQuery, useMutation, useSubscription, useApolloClient } from '@apollo/react-hooks'
 import { gql } from 'apollo-boost'
 import LoginForm from './components/LoginForm'
 import Recommended from './components/Recommended'
+
+const BOOK_DETAILS = gql`
+  fragment BookDetails on Book {
+    title
+    author {
+      name
+    }
+    published
+    genres
+  }
+`
 
 const LOGIN = gql`
   mutation login($username: String!, $password: String!) {
@@ -28,14 +39,10 @@ const ALL_AUTHORS = gql`
 const ALL_BOOKS = gql`
 query allBooks($genre: String) {
   allBooks(genre: $genre) {
-    title
-    author {
-      name
-    }
-    published
-    genres
+    ...BookDetails
   }
 }
+${BOOK_DETAILS}
 `
 
 const ALL_GENRES = gql`
@@ -54,14 +61,10 @@ mutation addBook($title: String!, $name: String!, $published: String!, $genres: 
     published: $published,
     genres: $genres
   ) {
-    title
-    author {
-      name
-    }
-    published
-    genres
+    ...BookDetails
   }
 }
+${BOOK_DETAILS}
 `
 
 const EDIT_AUTHOR = gql`
@@ -72,6 +75,15 @@ const EDIT_AUTHOR = gql`
       bookCount
     } 
   }
+`
+
+const BOOK_ADDED = gql`
+  subscription {
+    bookAdded {
+      ...BookDetails
+    }
+  }
+  ${BOOK_DETAILS}
 `
 
 const App = () => {
@@ -97,6 +109,15 @@ const App = () => {
   const [login] = useMutation(LOGIN, {
     onError: handleError
   })
+
+  useSubscription(BOOK_ADDED, {
+    onSubscriptionData: ({ subscriptionData }) => {
+      const addedBook = subscriptionData.data.bookAdded
+      window.alert(`${addedBook.title} added`)
+      console.log(subscriptionData)
+    }
+  })
+
   const [addBook] = useMutation(ADD_BOOK, {
     onError: handleError,
     refetchQueries: [{ query: ALL_AUTHORS }, { query: ALL_BOOKS, variables: { genre } },{ query: ALL_GENRES }]
