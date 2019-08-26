@@ -110,17 +110,38 @@ const App = () => {
     onError: handleError
   })
 
+  const updateCacheWith = (addedBook) => {
+    const includedIn = (set, object) => 
+      set.map(book => book.title).includes(object.title)
+    
+    const dataInStore = client.readQuery({
+      query: ALL_BOOKS, 
+      variables: { genre }
+    })
+    
+    if (!includedIn(dataInStore.allBooks, addedBook)) {
+      dataInStore.allBooks.push(addedBook)
+      client.writeQuery({
+        query: ALL_BOOKS,
+        data: dataInStore
+      })
+    }
+  }
+
   useSubscription(BOOK_ADDED, {
     onSubscriptionData: ({ subscriptionData }) => {
       const addedBook = subscriptionData.data.bookAdded
       window.alert(`${addedBook.title} added`)
-      console.log(subscriptionData)
+      updateCacheWith(addedBook)
     }
   })
 
   const [addBook] = useMutation(ADD_BOOK, {
     onError: handleError,
-    refetchQueries: [{ query: ALL_AUTHORS }, { query: ALL_BOOKS, variables: { genre } },{ query: ALL_GENRES }]
+    refetchQueries: [{ query: ALL_AUTHORS }, { query: ALL_BOOKS, variables: { genre } },{ query: ALL_GENRES }],
+    update: (store, response) => { 
+      updateCacheWith(response.data.addBook)
+    }
   })
   const [editAuthor] = useMutation(EDIT_AUTHOR, {
     onError: handleError,

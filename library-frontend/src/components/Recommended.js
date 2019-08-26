@@ -10,7 +10,7 @@ const FAVORITE_GENRE = gql`
 }
 `
 
-const RECOMMENDE_BOOKS = gql`
+const RECOMMENDED_BOOKS = gql`
 query allBooks($genre: String) {
   allBooks(genre: $genre) {
     title
@@ -35,7 +35,7 @@ const Recommended = (props) => {
       })
       setRecommended(data.me.favoriteGenre)
       const books = await client.query({
-        query: RECOMMENDE_BOOKS,
+        query: RECOMMENDED_BOOKS,
         variables: { genre: data.me.favoriteGenre }
       })
       setBooks(books.data.allBooks)
